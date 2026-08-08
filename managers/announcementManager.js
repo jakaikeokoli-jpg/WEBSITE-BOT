@@ -15,14 +15,12 @@ const filePath = path.join(
     "announcements.json"
 );
 
-
 // ========================================
 // Ensure Data Directory/File Exists
 // ========================================
 
 function ensureDataFile() {
 
-    // Create data folder if missing
     if (!fs.existsSync(dataDirectory)) {
 
         fs.mkdirSync(
@@ -34,8 +32,6 @@ function ensureDataFile() {
 
     }
 
-
-    // Create announcements.json if missing
     if (!fs.existsSync(filePath)) {
 
         fs.writeFileSync(
@@ -48,7 +44,6 @@ function ensureDataFile() {
 
 }
 
-
 // ========================================
 // Load Announcements
 // ========================================
@@ -57,14 +52,13 @@ function load() {
 
     ensureDataFile();
 
-
     try {
 
-        const data = fs.readFileSync(
-            filePath,
-            "utf8"
-        );
-
+        const data =
+            fs.readFileSync(
+                filePath,
+                "utf8"
+            );
 
         if (!data.trim()) {
 
@@ -72,15 +66,14 @@ function load() {
 
         }
 
-
         const announcements =
             JSON.parse(data);
 
-
-        return Array.isArray(announcements)
+        return Array.isArray(
+            announcements
+        )
             ? announcements
             : [];
-
 
     } catch (error) {
 
@@ -89,13 +82,11 @@ function load() {
             error
         );
 
-
         return [];
 
     }
 
 }
-
 
 // ========================================
 // Save Announcements
@@ -104,7 +95,6 @@ function load() {
 function save(announcements) {
 
     ensureDataFile();
-
 
     try {
 
@@ -122,9 +112,7 @@ function save(announcements) {
 
         );
 
-
         return true;
-
 
     } catch (error) {
 
@@ -133,13 +121,11 @@ function save(announcements) {
             error
         );
 
-
         return false;
 
     }
 
 }
-
 
 // ========================================
 // Create Announcement
@@ -147,8 +133,22 @@ function save(announcements) {
 
 function create(data) {
 
-    const announcements = load();
+    const announcements =
+        load();
 
+    // Prevent duplicate Discord messages
+    const existing =
+        announcements.find(
+            announcement =>
+                announcement.id ===
+                data.id
+        );
+
+    if (existing) {
+
+        return existing;
+
+    }
 
     const announcement = {
 
@@ -186,29 +186,32 @@ function create(data) {
 
         channelId:
             data.channelId ||
-            "1506837808348659763"
+            "1506837808348659763",
+
+        attachments:
+            data.attachments ||
+            [],
+
+        messageURL:
+            data.messageURL ||
+            ""
 
     };
-
 
     // Newest announcement first
     announcements.unshift(
         announcement
     );
 
-
     save(announcements);
-
 
     console.log(
         `📢 Announcement created: ${announcement.title}`
     );
 
-
     return announcement;
 
 }
-
 
 // ========================================
 // Get All Announcements
@@ -220,15 +223,14 @@ function getAll() {
 
 }
 
-
 // ========================================
 // Get One Announcement
 // ========================================
 
 function getById(id) {
 
-    const announcements = load();
-
+    const announcements =
+        load();
 
     return announcements.find(
         announcement =>
@@ -237,15 +239,14 @@ function getById(id) {
 
 }
 
-
 // ========================================
 // Delete Announcement
 // ========================================
 
 function remove(id) {
 
-    const announcements = load();
-
+    const announcements =
+        load();
 
     const filtered =
         announcements.filter(
@@ -253,14 +254,11 @@ function remove(id) {
                 announcement.id !== id
         );
 
-
     save(filtered);
-
 
     return true;
 
 }
-
 
 // ========================================
 // Export
