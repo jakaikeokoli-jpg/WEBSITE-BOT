@@ -2,15 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const fs = require("fs");
-const path = require("path");
-
-const CHANNEL_ID = "1506837808348659763";
-
-const filePath = path.join(
-    __dirname,
-    "../data/announcements.json"
-);
+const announcementManager = require("../managers/announcementManager");
 
 
 // ==========================
@@ -19,22 +11,17 @@ const filePath = path.join(
 
 router.get("/", (req, res) => {
 
-    if (!fs.existsSync(filePath)) {
-        return res.json([]);
-    }
-
     try {
 
-        const announcements = JSON.parse(
-            fs.readFileSync(filePath, "utf8")
-        );
+        const announcements =
+            announcementManager.getAll();
 
         res.json(announcements);
 
     } catch (error) {
 
         console.error(
-            "Announcement API Error:",
+            "❌ Announcement API Error:",
             error
         );
 
@@ -48,86 +35,173 @@ router.get("/", (req, res) => {
 
 
 // ==========================
-// Publish Announcement
+// Get Single Announcement
 // ==========================
 
-router.post("/", (req, res) => {
+router.get("/:id", (req, res) => {
 
-    const {
-        title,
-        content,
-        author,
-        date
-    } = req.body;
+    try {
+
+        const announcement =
+            announcementManager.getById(
+                req.params.id
+            );
 
 
-    if (!title || !content) {
+        if (!announcement) {
 
-        return res.status(400).json({
-            error: "Title and content are required"
+            return res.status(404).json({
+                error: "Announcement not found"
+            });
+
+        }
+
+
+        res.json(announcement);
+
+    } catch (error) {
+
+        console.error(
+            "❌ Announcement API Error:",
+            error
+        );
+
+        res.status(500).json({
+            error: "Unable to load announcement"
         });
 
     }
 
+});
 
-    let announcements = [];
+
+// ==========================
+// Create Announcement
+// ==========================
+
+router.post("/", (req, res) => {
+
+    try {
+
+        const {
+            title,
+            content,
+            author,
+            authorId,
+            avatar,
+            date,
+            duration,
+            channelId
+        } = req.body;
 
 
-    if (fs.existsSync(filePath)) {
+        if (!title || !content) {
 
-        try {
+            return res.status(400).json({
 
-            announcements = JSON.parse(
-                fs.readFileSync(filePath, "utf8")
-            );
+                error:
+                    "Title and content are required"
 
-        } catch {
-
-            announcements = [];
+            });
 
         }
 
+
+        const announcement =
+            announcementManager.create({
+
+                title,
+
+                content,
+
+                author:
+                    author ||
+                    "TXRP Staff",
+
+                authorId:
+                    authorId ||
+                    null,
+
+                avatar:
+                    avatar ||
+                    "",
+
+                date:
+                    date ||
+                    new Date().toISOString(),
+
+                duration:
+                    duration ||
+                    null,
+
+                channelId:
+                    channelId ||
+                    "1506837808348659763"
+
+            });
+
+
+        res.status(201).json(
+            announcement
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Failed to create announcement:",
+            error
+        );
+
+
+        res.status(500).json({
+
+            error:
+                "Unable to create announcement"
+
+        });
+
     }
 
-
-    const announcement = {
-
-        id: Date.now().toString(),
-
-        title,
-
-        content,
-
-        author:
-            author || "TXRP Staff",
-
-        date:
-            date ||
-            new Date().toISOString(),
-
-        channelId: CHANNEL_ID
-
-    };
+});
 
 
-    announcements.unshift(
-        announcement
-    );
+// ==========================
+// Delete Announcement
+// ==========================
+
+router.delete("/:id", (req, res) => {
+
+    try {
+
+        announcementManager.remove(
+            req.params.id
+        );
 
 
-    fs.writeFileSync(
-        filePath,
-        JSON.stringify(
-            announcements,
-            null,
-            4
-        )
-    );
+        res.json({
+
+            success: true
+
+        });
 
 
-    res.status(201).json(
-        announcement
-    );
+    } catch (error) {
+
+        console.error(
+            "❌ Failed to delete announcement:",
+            error
+        );
+
+
+        res.status(500).json({
+
+            error:
+                "Unable to delete announcement"
+
+        });
+
+    }
 
 });
 
