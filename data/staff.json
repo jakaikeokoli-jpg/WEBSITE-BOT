@@ -1,0 +1,14 @@
+[
+    {
+        "userId": "DISCORD_USER_ID_HERE",
+        "role": "Owner"
+    },
+    {
+        "userId": "DISCORD_USER_ID_HERE",
+        "role": "Founder"
+    },
+    {
+        "userId": "DISCORD_USER_ID_HERE",
+        "role": "Director"
+    }
+]
