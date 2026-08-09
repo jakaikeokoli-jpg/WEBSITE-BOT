@@ -17,19 +17,29 @@ const announcementsAPI = require("./api/announcements");
 const announcementManager =
     require("./managers/announcementManager");
 
+
 // ==========================
 // Discord Client
 // ==========================
 
 const client = new Client({
+
     intents: [
+
         GatewayIntentBits.Guilds,
+
         GatewayIntentBits.GuildMembers,
+
         GatewayIntentBits.GuildPresences,
+
         GatewayIntentBits.GuildMessages,
+
         GatewayIntentBits.MessageContent
+
     ]
+
 });
+
 
 // ==========================
 // Express API
@@ -41,8 +51,12 @@ app.use(cors());
 
 app.use(express.json());
 
+
 // Render provides PORT automatically
-const API_PORT = process.env.PORT || 3001;
+
+const API_PORT =
+    process.env.PORT || 3001;
+
 
 // ==========================
 // Staff API
@@ -52,12 +66,16 @@ app.use(
     "/api/staff",
 
     (req, res, next) => {
+
         req.client = client;
+
         next();
+
     },
 
     staffAPI
 );
+
 
 // ==========================
 // Announcements API
@@ -67,12 +85,16 @@ app.use(
     "/api/announcements",
 
     (req, res, next) => {
+
         req.client = client;
+
         next();
+
     },
 
     announcementsAPI
 );
+
 
 // ==========================
 // Start Express API
@@ -90,11 +112,13 @@ app.listen(API_PORT, () => {
 
 });
 
+
 // ==========================
 // Load Commands
 // ==========================
 
 loadCommands(client);
+
 
 // ==========================
 // Announcement Channel
@@ -103,24 +127,26 @@ loadCommands(client);
 const ANNOUNCEMENT_CHANNEL_ID =
     "1506837808348659763";
 
+
 // ==========================
 // Discord Message Listener
 // ==========================
 
 client.on("messageCreate", async (message) => {
 
-    // Ignore bots
-    if (message.author.bot) {
-        return;
-    }
-
+    // ==========================
     // Only watch announcement channel
+    // ==========================
+
     if (
         message.channel.id !==
         ANNOUNCEMENT_CHANNEL_ID
     ) {
+
         return;
+
     }
+
 
     try {
 
@@ -131,23 +157,146 @@ client.on("messageCreate", async (message) => {
         const attachments =
             Array.from(
                 message.attachments.values()
-            ).map(
-                attachment => ({
+            ).map(attachment => ({
 
-                    name:
-                        attachment.name,
+                name:
+                    attachment.name || "",
 
-                    url:
-                        attachment.url,
+                url:
+                    attachment.url,
 
-                    contentType:
-                        attachment.contentType,
+                contentType:
+                    attachment.contentType || "",
 
-                    size:
-                        attachment.size
+                size:
+                    attachment.size || 0
 
-                })
-            );
+            }));
+
+
+        // ==========================
+        // Get Embeds
+        // ==========================
+
+        const embeds =
+            message.embeds.map(embed => ({
+
+                title:
+                    embed.title || "",
+
+                description:
+                    embed.description || "",
+
+                url:
+                    embed.url || "",
+
+                color:
+                    embed.color || null,
+
+                image:
+                    embed.image?.url || "",
+
+                thumbnail:
+                    embed.thumbnail?.url || "",
+
+                footer:
+                    embed.footer?.text || "",
+
+                author:
+                    embed.author?.name || ""
+
+            }));
+
+
+        // ==========================
+        // Determine Title
+        // ==========================
+
+        let title =
+            message.content
+                ?.split("\n")[0]
+                ?.substring(0, 100);
+
+
+        // If no message content,
+        // use the first embed title
+
+        if (
+            !title &&
+            embeds.length > 0
+        ) {
+
+            title =
+                embeds[0].title ||
+                embeds[0].author ||
+                "TXRP Announcement";
+
+        }
+
+
+        if (!title) {
+
+            title =
+                "TXRP Announcement";
+
+        }
+
+
+        // ==========================
+        // Determine Content
+        // ==========================
+
+        let content =
+            message.content || "";
+
+
+        // If there's no normal message
+        // content, use embed description
+
+        if (
+            !content &&
+            embeds.length > 0
+        ) {
+
+            content =
+                embeds
+                    .map(embed => {
+
+                        let text = "";
+
+                        if (embed.title) {
+
+                            text +=
+                                `**${embed.title}**\n`;
+
+                        }
+
+                        if (embed.description) {
+
+                            text +=
+                                embed.description;
+
+                        }
+
+                        return text;
+
+                    })
+                    .filter(Boolean)
+                    .join("\n\n");
+
+        }
+
+
+        // ==========================
+        // Message URL
+        // ==========================
+
+        const messageURL =
+            `https://discord.com/channels/` +
+            `${message.guildId}/` +
+            `${message.channel.id}/` +
+            `${message.id}`;
+
 
         // ==========================
         // Create Announcement
@@ -159,46 +308,55 @@ client.on("messageCreate", async (message) => {
                 id:
                     message.id,
 
-                title:
-                    message.content
-                        .split("\n")[0]
-                        .substring(0, 100)
-                    ||
-                    "TXRP Announcement",
+                title,
 
                 content:
-                    message.content,
+                    content ||
+                    "No announcement content.",
 
                 author:
-                    message.author.username,
+                    message.author
+                        ?.username ||
+                    "TXRP Staff",
 
                 authorId:
-                    message.author.id,
+                    message.author
+                        ?.id ||
+                    null,
 
                 avatar:
-                    message.author.displayAvatarURL({
+                    message.author
+                        ?.displayAvatarURL({
 
-                        extension: "png",
+                            extension: "png",
 
-                        size: 256
+                            size: 256
 
-                    }),
+                        }) || "",
 
                 date:
-                    message.createdAt.toISOString(),
+                    message.createdAt
+                        .toISOString(),
 
                 channelId:
                     message.channel.id,
 
                 attachments,
 
-                messageURL:
-                    `https://discord.com/channels/` +
-                    `${message.guildId}/` +
-                    `${message.channel.id}/` +
-                    `${message.id}`
+                embeds,
+
+                messageURL
 
             });
+
+
+        // ==========================
+        // Console Logging
+        // ==========================
+
+        console.log(
+            "=================================="
+        );
 
         console.log(
             "📢 New TXRP announcement captured"
@@ -216,16 +374,30 @@ client.on("messageCreate", async (message) => {
             `📎 Attachments: ${attachments.length}`
         );
 
+        console.log(
+            `🧩 Embeds: ${embeds.length}`
+        );
+
+        console.log(
+            `🔗 ${messageURL}`
+        );
+
+        console.log(
+            "=================================="
+        );
+
+
     } catch (error) {
 
         console.error(
-            "❌ Failed to save announcement:",
+            "❌ Failed to capture announcement:",
             error
         );
 
     }
 
 });
+
 
 // ==========================
 // Bot Ready
@@ -251,6 +423,7 @@ client.once("clientReady", () => {
 
 });
 
+
 // ==========================
 // Interaction Handler
 // ==========================
@@ -266,6 +439,7 @@ client.on(
         )
 
 );
+
 
 // ==========================
 // Login

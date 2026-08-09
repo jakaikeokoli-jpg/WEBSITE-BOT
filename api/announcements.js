@@ -2,12 +2,12 @@ const express = require("express");
 
 const router = express.Router();
 
-const announcementManager = require("../managers/announcementManager");
+const announcementManager =
+    require("../managers/announcementManager");
 
-
-// ==========================
+// ========================================
 // Get Announcements
-// ==========================
+// ========================================
 
 router.get("/", (req, res) => {
 
@@ -26,17 +26,19 @@ router.get("/", (req, res) => {
         );
 
         res.status(500).json({
-            error: "Unable to load announcements"
+
+            error:
+                "Unable to load announcements"
+
         });
 
     }
 
 });
 
-
-// ==========================
+// ========================================
 // Get Single Announcement
-// ==========================
+// ========================================
 
 router.get("/:id", (req, res) => {
 
@@ -47,15 +49,16 @@ router.get("/:id", (req, res) => {
                 req.params.id
             );
 
-
         if (!announcement) {
 
             return res.status(404).json({
-                error: "Announcement not found"
+
+                error:
+                    "Announcement not found"
+
             });
 
         }
-
 
         res.json(announcement);
 
@@ -67,23 +70,27 @@ router.get("/:id", (req, res) => {
         );
 
         res.status(500).json({
-            error: "Unable to load announcement"
+
+            error:
+                "Unable to load announcement"
+
         });
 
     }
 
 });
 
-
-// ==========================
+// ========================================
 // Create Announcement
-// ==========================
+// ========================================
 
 router.post("/", (req, res) => {
 
     try {
 
         const {
+
+            id,
             title,
             content,
             author,
@@ -91,9 +98,11 @@ router.post("/", (req, res) => {
             avatar,
             date,
             duration,
-            channelId
-        } = req.body;
+            channelId,
+            attachments,
+            messageURL
 
+        } = req.body;
 
         if (!title || !content) {
 
@@ -106,9 +115,10 @@ router.post("/", (req, res) => {
 
         }
 
-
         const announcement =
             announcementManager.create({
+
+                id,
 
                 title,
 
@@ -136,15 +146,21 @@ router.post("/", (req, res) => {
 
                 channelId:
                     channelId ||
-                    "1506837808348659763"
+                    "1506837808348659763",
+
+                attachments:
+                    attachments ||
+                    [],
+
+                messageURL:
+                    messageURL ||
+                    ""
 
             });
-
 
         res.status(201).json(
             announcement
         );
-
 
     } catch (error) {
 
@@ -152,7 +168,6 @@ router.post("/", (req, res) => {
             "❌ Failed to create announcement:",
             error
         );
-
 
         res.status(500).json({
 
@@ -165,26 +180,61 @@ router.post("/", (req, res) => {
 
 });
 
-
-// ==========================
+// ========================================
 // Delete Announcement
-// ==========================
+// ========================================
 
 router.delete("/:id", (req, res) => {
 
     try {
 
-        announcementManager.remove(
-            req.params.id
-        );
+        const id =
+            String(
+                req.params.id
+            );
 
+        const existing =
+            announcementManager.getById(
+                id
+            );
+
+        if (!existing) {
+
+            return res.status(404).json({
+
+                error:
+                    "Announcement not found"
+
+            });
+
+        }
+
+        const deleted =
+            announcementManager.remove(
+                id
+            );
+
+        if (!deleted) {
+
+            return res.status(500).json({
+
+                error:
+                    "Unable to delete announcement"
+
+            });
+
+        }
 
         res.json({
 
-            success: true
+            success: true,
+
+            deletedId: id,
+
+            message:
+                "Announcement deleted successfully"
 
         });
-
 
     } catch (error) {
 
@@ -192,7 +242,6 @@ router.delete("/:id", (req, res) => {
             "❌ Failed to delete announcement:",
             error
         );
-
 
         res.status(500).json({
 
@@ -204,6 +253,5 @@ router.delete("/:id", (req, res) => {
     }
 
 });
-
 
 module.exports = router;

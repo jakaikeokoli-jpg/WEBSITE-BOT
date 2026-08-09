@@ -137,16 +137,20 @@ function create(data) {
         load();
 
     // Prevent duplicate Discord messages
-    const existing =
-        announcements.find(
-            announcement =>
-                announcement.id ===
-                data.id
-        );
+    if (data.id) {
 
-    if (existing) {
+        const existing =
+            announcements.find(
+                announcement =>
+                    String(announcement.id) ===
+                    String(data.id)
+            );
 
-        return existing;
+        if (existing) {
+
+            return existing;
+
+        }
 
     }
 
@@ -194,7 +198,19 @@ function create(data) {
 
         messageURL:
             data.messageURL ||
-            ""
+            "",
+
+        published:
+            data.published ||
+            false,
+
+        publishedBy:
+            data.publishedBy ||
+            null,
+
+        publishedAt:
+            data.publishedAt ||
+            null
 
     };
 
@@ -234,7 +250,8 @@ function getById(id) {
 
     return announcements.find(
         announcement =>
-            announcement.id === id
+            String(announcement.id) ===
+            String(id)
     );
 
 }
@@ -248,13 +265,61 @@ function remove(id) {
     const announcements =
         load();
 
+    const normalizedId =
+        String(id);
+
+    const existing =
+        announcements.find(
+            announcement =>
+                String(announcement.id) ===
+                normalizedId
+        );
+
+    if (!existing) {
+
+        console.log(
+            `❌ Announcement ${normalizedId} was not found.`
+        );
+
+        console.log(
+            "Available IDs:",
+            announcements.map(
+                announcement =>
+                    String(announcement.id)
+            )
+        );
+
+        return false;
+
+    }
+
     const filtered =
         announcements.filter(
             announcement =>
-                announcement.id !== id
+                String(announcement.id) !==
+                normalizedId
         );
 
-    save(filtered);
+    const saved =
+        save(filtered);
+
+    if (!saved) {
+
+        console.error(
+            "❌ Failed to save announcements after deletion."
+        );
+
+        return false;
+
+    }
+
+    console.log(
+        `🗑️ Deleted announcement: ${existing.title}`
+    );
+
+    console.log(
+        `📊 Remaining announcements: ${filtered.length}`
+    );
 
     return true;
 
