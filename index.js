@@ -445,6 +445,20 @@ client.on(
 // Login
 // ==========================
 
-client.login(
-    process.env.TOKEN
+// ==========================
+// Login
+// ==========================
+
+console.log(
+    "🔑 TOKEN exists:",
+    !!process.env.TOKEN
 );
+
+client.login(process.env.TOKEN)
+    .then(() => {
+        console.log("🔐 Discord login request accepted");
+    })
+    .catch((error) => {
+        console.error("❌ Discord login failed:");
+        console.error(error);
+    });
